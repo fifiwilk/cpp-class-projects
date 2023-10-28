@@ -1,0 +1,53 @@
+Write a program to verify if the parking fee for a vehicle has been paid.
+Paid parking is in force every day from 8.00 am to 8.00 pm.
+A parking fee must be paid for at least 10 minutes. 
+The maximum time you can pay for parking is 11 hours and 59 minutes, 
+so you can, for example, pay for parking from 8.00 am to 7.59 pm on the same day or,
+for example, from 7.00 pm to 6.59 pm the next day.
+
+The program reads data from standard input. 
+Lines with input data have one of the following two formats:
+
+Introduction of information about payment:
+
+<vehicle registration number> <start time of parking> <end time of parking>
+
+Check if a fee has been paid:
+
+<vehicle registration number> <current time>
+
+
+The vehicle registration number consists of 3 to 11 characters being an uppercase letter
+of the English alphabet or a number, where the first character must be a letter. 
+Fields describing time consist of hours and minutes separated by a dot. 
+The hour can be expressed with one or two digits (leading zero is optional). 
+The minute is always expressed with two digits.
+
+Correct time values start at 8.00 and end at 20.00. 
+The values of the start time of parking and current time in subsequent 
+lines of input data are weakly monotonically ordered.
+
+Fields in the data line are separated by whitespace. 
+At the beginning and end of the line, white characters may also appear.
+
+The program confirms the introduction of information about the payment
+by writing to the standard output the message:
+
+OK L
+
+The program confirms the payment by writing to the 
+standard output the message:
+
+YES L
+
+The program confirms the non-payment by writing to the
+standard output the message:
+
+NO L
+
+For the above messages, L denotes the line number. 
+Lines are numbered from 1, including lines containing errors.
+
+The program should remove from memory information that is no longer needed.
+
+The program should end with code 0.
