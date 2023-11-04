@@ -1,0 +1,60 @@
+The goal of this task is to write a C++ module for managing partially ordered sets (posets) whose elements are strings. 
+The module should be usable in C and should provide the following functions:
+
+unsigned long poset_new(void);
+Creates a new poset and returns its identifier.
+
+void poset_delete(unsigned long id);
+If a poset with the identifier id exists, it deletes it, otherwise it does nothing.
+
+size_t poset_size(unsigned long id);
+If a poset with the identifier id exists, the result is the number of its elements, otherwise 0.
+
+bool poset_insert(unsigned long id, char const *value);
+If a poset with the identifier id exists and the element value is not part of this set, 
+then it adds the element to the set, otherwise it does nothing.
+The new element is not related to any other element.
+The result is true if the element was added, false otherwise.
+
+bool poset_remove(unsigned long id, char const *value);
+If a poset with the identifier id exists and the element value is part of this set,
+then it removes the element from the set and all relations of this element, otherwise it does nothing. 
+The result is true if the element was removed, false otherwise.
+
+bool poset_add(unsigned long id, char const *value1, char const *value2);
+If a poset with the identifier id exists and the elements value1 and value2 are part of this set and
+are not related, then it extends the relation so that element value1 precedes element value2,
+otherwise it does nothing. The result is true if the relation has been extended, false otherwise.
+
+bool poset_del(unsigned long id, char const *value1, char const *value2);
+If a poset with the identifier id exists, the elements value1 and value2 are part of this set,
+and element value1 precedes element value2, and removing the relation between value1 and value2
+does not disturb the partial order, then it removes the relation between these elements, otherwise it does nothing. 
+The result is true if the relation has been changed, false otherwise.
+
+bool poset_test(unsigned long id, char const *value1, char const *value2);
+If a poset with the identifier id exists, the elements value1 and value2 are part of this set and element value1 
+precedes element value2, then the result is true, otherwise false.
+
+void poset_clear(unsigned long id);
+If a poset with the identifier id exists, it removes all its elements and the relations between them, 
+otherwise it does nothing.
+
+All global variables and helper functions not belonging to the module interface should be
+hidden from the external world.
+
+Functions should print diagnostic information to the standard error stream.
+The correctness of functions' execution, the maintenance of invariants, data coherence, etc., can be checked with assertions.
+Compiling with the -DNDEBUG parameter should disable both printing and assertions. 
+The handling of standard diagnostic output should be implemented using C++ streams (i.e., iostream).
+
+A value parameter with a NULL value is invalid.
+
+The expected solution should make use of containers and methods provided by the standard C++ library.
+You should not define your own structures or classes. User-passed pointers char const * should not be stored directly, 
+because the user may modify the data under the previously passed pointer or free the memory. 
+Only one copy of the name of each element should be kept for each poset.
+
+The solution should not overuse conditional compilation. Instead, "if constexpr" should be used.
+Parts of the source code performing operations on sets should not depend on the compilation method - whether the -DNDEBUG
+parameter is present or not (otherwise, the diagnostic version would be pointless).
