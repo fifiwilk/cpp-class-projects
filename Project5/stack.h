@@ -2,11 +2,11 @@
 #define STACK_H
 
 #include <stack>
+#include <stdexcept>
 #include <map>
 #include <memory>
 #include <set>
 
-namespace {
 template<typename K, typename V>
 class Storage {
 private:
@@ -78,7 +78,6 @@ class Inner_stack {
 private:
 	std::map<K, std::shared_ptr<Storage<K, V>>> storage_map;
 
-
 	std::set<std::pair<size_t, std::shared_ptr<Storage<K, V>>>> storage_set;
 
 	size_t referenced_storages = 0;
@@ -89,7 +88,8 @@ public:
 
 	Inner_stack(Inner_stack const &inner_stack) {
 		for (const auto &[key, value]: inner_stack.storage_map) {
-			std::shared_ptr<Storage<K, V>> pointer = std::make_shared<Storage<K, V>>(value);
+			std::shared_ptr<Storage<K, V>> pointer = 
+				std::make_shared<Storage<K, V>>(value);
 			storage_map[key] = pointer;
 			storage_set.insert(std::pair(pointer->height(), pointer));
 		}
@@ -115,7 +115,8 @@ public:
 	void pop() {
 		height--;
 
-		const std::shared_ptr<Storage<K, V>> &pointer = prev(storage_set.end())->second;
+		const std::shared_ptr<Storage<K, V>> &pointer = 
+			prev(storage_set.end())->second;
 		bool was_referenced = pointer->is_referenced();
 		storage_set.erase(std::pair(pointer->height(), pointer));
 
@@ -143,10 +144,12 @@ public:
 	}
 
 	std::pair<K const &, V &> front() {
-		const std::shared_ptr<Storage<K, V>> &pointer = prev(storage_set.end())->second;
+		const std::shared_ptr<Storage<K, V>> &pointer = 
+			prev(storage_set.end())->second;
 		bool was_referenced = pointer->is_referenced();
 
-		std::pair<K const &, V &> result = {pointer->get_key(), pointer->top()};
+		std::pair<K const &, V &> result = 
+			{pointer->get_key(), pointer->top()};
 
 		if (not was_referenced)
 			referenced_storages++;
@@ -155,21 +158,20 @@ public:
 	}
 
 	std::pair<K const &, V const &> front() const {
-
-		const std::shared_ptr<Storage<K, V>> &pointer = prev(storage_set.end())->second;
+		const std::shared_ptr<Storage<K, V>> &pointer = 
+			prev(storage_set.end())->second;
 		
-		std::pair<K const &, V const &> result = {pointer->get_key(), pointer->top()};
+		std::pair<K const &, V const &> result = 
+			{pointer->get_key(), pointer->top()};
 
 		return result;
 	}
 
 	V & front(K const &key) {
-		V &result;
-
 		std::shared_ptr<Storage<K, V>> &pointer = storage_map[key];
 		bool was_referenced = pointer->is_referenced();
 
-		result = pointer->top();
+		V &result = pointer->top();
 
 		if (not was_referenced)
 			referenced_storages++;
@@ -208,8 +210,57 @@ public:
 	bool is_referenced() const {
 		return referenced_storages > 0;
 	}
+
+	const std::map<K, std::shared_ptr<Storage<K, V>>>& get_storage_map() {
+		return storage_map;
+	}
 };
-}
+
+template<typename K, typename V>
+class const_stack_iterator {
+private:
+	using map_it = 
+		typename std::map<K, std::shared_ptr<Storage<K, V>>>
+		::const_iterator;
+
+	map_it map_iterator;
+
+public:
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = const K;
+	using pointer = const K*;
+	using reference = const K&;
+
+	const_stack_iterator(map_it it)
+		: map_iterator(it) {}
+
+	reference operator*() const {
+		return map_iterator->first;
+	}
+
+	pointer operator->() const {
+		return &(map_iterator->first);
+	}
+
+	const_stack_iterator& operator++() {
+		map_iterator++;
+		return *this;
+	}
+
+	const_stack_iterator operator++(int) {
+		const_stack_iterator iterator = *this;
+		++(*this);
+		return iterator;
+	}
+
+	bool operator==(const const_stack_iterator &other) const {
+		return map_iterator == other.map_iterator;
+	}
+
+	bool operator!=(const const_stack_iterator &other) const {
+		return map_iterator != other.map_iterator;
+	}
+};
 
 namespace cxx {
 template<typename K, typename V>
@@ -232,6 +283,11 @@ public:
 			detach();
 	}
 
+	stack(stack &&_stack) noexcept : 
+	 	stack_pointer(std::move(_stack.stack_pointer)) {}
+
+	~stack() noexcept = default;
+
 	stack & operator=(stack const &_stack) {
 		stack_pointer = _stack.stack_pointer;
 		if (_stack.stack_pointer->is_referenced())
@@ -247,6 +303,9 @@ public:
 	}
 	
 	void pop() {
+		if (stack_pointer->size() == 0)
+			throw std::invalid_argument("Stack is empty.");
+
 		if (not stack_pointer.unique())
 			detach();
 
@@ -254,6 +313,9 @@ public:
 	}
 
 	void pop(K const &key) {
+		if (stack_pointer->count(key) == 0)
+			throw std::invalid_argument("Key not found in stack.");
+
 		if (not stack_pointer.unique())
 			detach();
 
@@ -261,6 +323,9 @@ public:
 	}
 
 	std::pair<K const &, V &> front() {
+		if (stack_pointer->size() == 0)
+			throw std::invalid_argument("Stack is empty.");
+
 		if (not stack_pointer.unique())
 			detach();
 
@@ -272,6 +337,9 @@ public:
 	}
 
 	V & front(K const &key) {
+		if (stack_pointer->count(key) == 0)
+			throw std::invalid_argument("Key not found in stack.");
+
 		if (not stack_pointer.unique())
 			detach();
 
@@ -295,6 +363,17 @@ public:
 			detach();
 
 		stack_pointer->clear();
+	}
+
+public:
+	using const_iterator = const_stack_iterator<K, V>;
+
+	const_iterator cbegin() const {
+		return const_iterator(stack_pointer->get_storage_map().cbegin());
+	}
+
+	const_iterator cend() const {
+		return const_iterator(stack_pointer->get_storage_map().cend());
 	}
 };
 }
